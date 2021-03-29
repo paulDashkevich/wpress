@@ -1,0 +1,34 @@
+---
+- meta: end_play
+  when: (ansible_distribution != "CentOS" and ansible_distribution_major_version != "7")
+
+- name: install iscsi client
+  yum: name={{ item }}
+  with_items:
+    - iscsi-initiator-utils
+    - iscsi-initiator-utils-iscsiuio
+    - gfs2-utils
+    - lvm2-cluster
+    - fence-agents-all
+
+- name: change iqn
+  lineinfile:
+    path: /etc/iscsi/initiatorname.iscsi
+    regexp: '^InitiatorName=.*'
+    line: 'InitiatorName=iqn.2021-02.by.otus:{{ inventory_hostname }}'
+
+- name: iscsiadm
+  shell: |
+        iscsiadm -m discovery -t st -p {{ hostvars.iscsi.ansible_subnet1 }}
+        iscsiadm -m discovery -t st -p {{ hostvars.iscsi.ansible_subnet2 }}
+        iscsiadm -m node -l -T iqn.2021-02.by.otus:storage.target00
+
+- name: iscsid start
+  service:
+    name: iscsid
+    state: started
+
+- name: set up multipath
+  command: mpathconf --enable --with_multipathd y
+  notify:
+    - start multipath

@@ -1,0 +1,11 @@
+---
+- name: Disable IPv6 in grub
+  replace:
+    dest: /etc/default/grub
+    regexp: '^GRUB_CMDLINE_LINUX="(.*)"'
+    replace: 'GRUB_CMDLINE_LINUX="\1 ipv6.disable=1"'
+    mode: '0644'
+    backup: yes
+  notify:
+    - grub2-mkconfig
+    - reboot_hosts

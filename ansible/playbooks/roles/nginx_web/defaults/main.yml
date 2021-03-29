@@ -1,0 +1,89 @@
+---
+php_version: 74
+php_packages:
+  - php-cli
+  - php-common
+  - php-devel
+  - php-fpm
+  - php-gd
+  - php-mbstring
+  - php-mysqlnd
+  - php-pdo
+  - php-pear
+  - php-pecl-mysql
+  - php-pecl-zip
+  - php-xml
+  - php-xmlrpc
+
+php_enablerepo: "epel,remi,remi-php{{ php_version | replace('.', '') }}"
+php_execute_filename: /usr/bin/php
+php_extension_conf_path: /etc/php.d
+php_fpm_conf_path: /etc/fpm
+php_fpm_pool_conf_path: /etc/php-fpm.d/www.conf
+# -----------------------------------------------------------------------------
+# php.ini
+# -----------------------------------------------------------------------------
+# Language options
+php_short_open_tag: 'Off'
+php_output_buffering: 4096
+# Miscellaneous
+php_expose_php: "On"
+# Resource limits
+php_max_execution_time: 60
+php_max_input_time: 60
+php_max_input_vars: 1000
+php_memory_limit: "256M"
+# Error handling and logging
+php_error_reporting: "E_ALL & ~E_DEPRECATED & ~E_STRICT"
+php_display_errors: "Off"
+php_display_startup_errors: "Off"
+# Data handling
+php_post_max_size: "32M"
+# Paths and directories
+php_realpath_cache_size: "32K"
+# File uploads
+php_upload_max_filesize: "1024M"
+# Fopen wrappers
+php_allow_url_fopen: "On"
+# Module settings
+php_date_timezone: "Europe/Minsk"
+php_sendmail_path: "/usr/sbin/sendmail -t -i"
+php_session_save_handler: files
+php_session_save_path: /mnt/gfs2/PHP/php/session
+php_session_cookie_lifetime: 0
+php_session_gc_probability: 1
+php_session_gc_divisor: 1000
+php_session_gc_maxlifetime: 1440
+php_pdo_mysql_cache_size: 2000
+php_mysql_cache_size: 2000
+# -----------------------------------------------------------------------------
+# www.conf
+# -----------------------------------------------------------------------------
+php_fpm_daemonize: "yes"
+php_fpm_pool_user: www-data
+php_fpm_pool_group: www-data
+php_fpm_listen: /mnt/gfs2/PHP/php-fpm/php-fpm.sock
+php_fpm_listen_allowed_clients: ""
+php_fpm_listen_mode: "0660"
+php_fpm_error_log: /mnt/gfs2/PHP/php-fpm/www-error.log
+php_fpm_pm: "dynamic"
+php_fpm_pm_max_children: 50
+php_fpm_pm_start_servers: 5
+php_fpm_pm_min_spare_servers: 5
+php_fpm_pm_max_spare_servers: 5
+php_fpm_pm_max_requests: 500
+php_fpm_catch_workers_output: "no"
+php_fpm_request_terminate_timeout: 0
+# -----------------------------------------------------------------------------
+# 10-opcache.ini
+# -----------------------------------------------------------------------------
+php_opcache_enable_cli: 1
+php_opcache_memory_consumption: 128
+php_opcache_interned_strings_buffer: 16
+php_opcache_max_accelerated_files: 4096
+php_opcache_max_wasted_percentage: 5
+php_opcache_validate_timestamps: 1
+php_opcache_revalidate_path: 0
+php_opcache_revalidate_freq: 2
+php_opcache_max_file_size: 0
+php_opcache_blacklist_filename: "/etc/php.d/opcache*.blacklist"

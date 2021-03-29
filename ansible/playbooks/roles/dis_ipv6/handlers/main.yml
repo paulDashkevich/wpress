@@ -1,0 +1,11 @@
+---
+
+- name: grub2-mkconfig
+  command: grub2-mkconfig -o /boot/grub2/grub.cfg
+  when: >
+    not (ansible_virtualization_type is defined and
+          (ansible_virtualization_type == "lxc" or ansible_virtualization_type == "docker")
+        )
+
+- name: reboot_hosts
+  reboot:

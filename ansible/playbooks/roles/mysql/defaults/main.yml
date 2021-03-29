@@ -1,0 +1,27 @@
+---
+mariadb_packages:
+  - MariaDB-common
+  - MariaDB-server
+  - MySQL-python
+
+mariadb_socket: /var/lib/mysql/mysql.sock
+mariadb_config_network: /etc/my.cnf.d/network.cnf
+mariadb_config_server: /etc/my.cnf.d/server.cnf
+mariadb_config_custom: /etc/my.cnf.d/custom.cnf
+mariadb_config_logrotate: /etc/logrotate.d/mysql
+mariadb_databases: 'wp'
+mariadb_users: 'wp'
+mariadb_root_password: 'wp_12345'
+mariadb_auth_unix_plugin: false
+mariadb_mirror: yum.mariadb.org
+mariadb_version: '10.5'
+
+# Network configuration (network.cnf)
+mariadb_service: mariadb
+#mariadb_bind_address: '10.1.0.13'
+
+# Server configuration
+mariadb_server_cnf: {}
+
+# Custom configuration
+mariadb_custom_cnf: {}

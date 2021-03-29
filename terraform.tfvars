@@ -1,0 +1,7 @@
+ah_dc            = "ams1"
+ah_token         = "YOUR_AH_TOKEN"
+ah_machine_type  = "start-xs"
+ah_image_type    = "centos-7-x64"
+ah_hdd           = "ssd2-ams1"
+ah_fp            = "YOUR_AH_HASH_SSH"
+private_key_path = "/root/.ssh/id_rsa.pub"

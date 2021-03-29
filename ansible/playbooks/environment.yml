@@ -1,0 +1,99 @@
+- name: time sync for all hosts
+  hosts: all
+  tags: time
+  become: true
+  roles:
+    - role: ntp
+    - role: common
+    - role: dis_ipv6
+
+- name: Configure proxy-server
+  hosts: proxy
+  tags: proxy
+  become: true
+  roles:
+    - role: nginx_proxy
+
+- name: Install and config mysql
+  hosts: sql
+  tags: sql1
+  become: true
+  ignore_errors: true
+  roles:
+    - role: mysql
+
+- name: Install and config KA master
+  hosts: web0
+  tags: KAmaster
+  become: true
+  roles:
+    - role: keepalived
+      vars:
+         virtual_router_id: 51
+         name_instance: nginx
+         state_VR: MASTER
+         priority: 103
+         ip_0: 10.1.0.10
+         ip_1: 10.1.0.11
+
+- name: Install and config KA backup
+  hosts: web1
+  tags: KAbackup
+  become: true
+  roles:
+    - role: keepalived
+      vars:
+         virtual_router_id: 51
+         name_instance: nginx
+         priority: 101
+         state_VR: BACKUP
+         ip_0: 10.1.0.11
+         ip_1: 10.1.0.10
+
+- name: Configure target and initiators
+  hosts: iscsi
+  tags: target
+  become: true
+  roles:
+    - role: iscsi-target
+
+- name: Configure iscsi_client
+  tags: web
+  become: true
+  hosts: web_pcm
+  roles:
+    - role: iscsi-client
+    - role: pacemaker
+
+- name: install qdevice
+  tags: clusterdevice
+  hosts: qdevice
+  become: true
+  ignore_errors: true
+  roles:
+    - role: qdevice
+
+- name: create FS CLVM
+  tags: clusterfs
+  hosts: web0
+  become: true
+  ignore_errors: true
+  roles:
+    - role: create-cfs
+
+- name: Install and configure backends nginx
+  hosts: web_pcm
+  tags: web
+  become: true
+  ignore_errors: true
+  roles:
+    - role: nginx_web
+
+- name: install wp
+  hosts: web0
+  tags: wp
+  become: true
+  ignore_errors: true
+  roles:
+    - role: install_wp
+    - role: tune_cluster

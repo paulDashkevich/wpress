@@ -1,0 +1,45 @@
+---
+- meta: end_play
+  when: (ansible_distribution != "CentOS" and ansible_distribution_major_version != "7")
+
+- name: install quorum soft
+  yum:
+    name:
+      - pcs
+      - psmisc
+      - policycoreutils-python
+      - libselinux-python
+      - mc
+      - corosync-qnetd
+
+- name: Change the hostname to our
+  hostname:
+    name: "{{ inventory_hostname }}"
+
+- name: "Build hosts file"
+  lineinfile:
+   path:   /etc/cloud/templates/hosts.redhat.tmpl
+   line:   "{{ hostvars[item].ansible_subnet1 }} {{ item }}"
+   insertbefore: "{{ item }}"
+  when: hostvars[item].ansible_default_ipv4.address is defined
+  with_items: "{{ groups['quorum'] }}"
+
+
+- name: start pcsd service
+  systemd:
+      name: pcsd
+      state: started
+      enabled: yes
+
+- name: setup q-device model 'net'
+  command: pcs qdevice setup model net --enable --start
+
+- name: Set password for local hacluster user
+  user:
+   name: "{{ cluster_user }}"
+   password: "{{ pcm_password | password_hash('sha512') }}"
+   state: present
+   update_password: always
+   create_home: yes
+  notify: "restart pcsd"
+  no_log: true

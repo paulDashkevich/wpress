@@ -1,0 +1,35 @@
+global_defs {
+     router_id _{{state_VR}}
+}
+vrrp_script check_nginx {
+     script "pidof nginx"
+     interval 3
+     weight   5
+}
+vrrp_sync_group link_instances {
+    group {
+            real
+            stop_duplicate
+    }
+  }
+vrrp_instance {{name_instance}} {
+     interface {{interface}}
+     state {{state_VR}}
+     virtual_router_id {{virtual_router_id}}
+     priority {{priority}}
+     advert_int 1
+  virtual_ipaddress {
+     {{virtual_ip}}/32 dev {{interface}} label {{interface}}:0
+  }
+    unicast_src_ip {{ip_0}}
+    unicast_peer {
+     {{ip_1}}
+  }
+  track_script {
+     check_nginx
+  }
+  authentication {
+     auth_type PASS
+     auth_pass {{secret_passwd}}
+  }
+}

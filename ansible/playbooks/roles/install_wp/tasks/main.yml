@@ -1,0 +1,36 @@
+---
+- name: Download and Extract WorPress
+  unarchive:
+        src: https://wordpress.org/latest.tar.gz
+        dest: /mnt/gfs2/WP/
+        remote_src: yes
+
+- name: Create and owner ship www-data dir
+  file:
+        path: /mnt/gfs2/WP/wordpress/
+        state: directory
+        owner: www-data
+
+- name: Set the correct permissions on Wordpress directories
+  command: find /mnt/gfs2/WP/wordpress/ -type d -exec chmod 750 {} \;
+
+- name: Set the correct permissions for Wordpress files
+  command: find /mnt/gfs2/WP/wordpress/ -type f -exec chmod 640 {} \;
+
+- name: Copy sample config file
+  command: mv /mnt/gfs2/WP/wordpress/wp-config-sample.php /mnt/gfs2/WP/wordpress/wp-config.php
+
+- name: Update Wordpress config file
+  lineinfile:
+        path: /mnt/gfs2/WP/wordpress/wp-config.php
+        regexp: "{{item.regexp}}"
+        line: "{{item.line}}"
+  with_items:
+        - {'regexp': "define\\( 'DB_NAME', '(.)+' \\);", 'line': "define( 'DB_NAME', 'wp' );"}
+        - {'regexp': "define\\( 'DB_USER', '(.)+' \\);", 'line': "define( 'DB_USER', 'wp' );"}
+        - {'regexp': "define\\( 'DB_PASSWORD', '(.)+' \\);", 'line': "define( 'DB_PASSWORD', 'wp_12345' );"}
+        - {'regexp': "define\\( 'DB_HOST', '(.)+' \\);", 'line': "define( 'DB_HOST', 'mysql' );"}
+        - {'regexp': "define\\( 'DB_CHARSET', '(.)+' \\);", 'line': "define( 'DB_CHARSET', 'utf8mb4' );"}
+        - {'regexp': "define\\( 'DB_COLLATE', '(.)+' \\);", 'line': "define( 'DB_COLLATE', 'utf8mb4_general_ci' );"}
+
+  notify: set permission

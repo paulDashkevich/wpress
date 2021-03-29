@@ -1,0 +1,7 @@
+- name: set permission
+  file: 
+     dest: /mnt/gfs2/WP/wordpress/ 
+     owner: www-data 
+     group: www-data 
+     mode: u=rwX,g=rX,o=rX 
+     recurse: yes

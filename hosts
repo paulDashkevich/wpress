@@ -1,0 +1,15 @@
+[target]
+iscsi   ansible_host=185.177.94.117 ansible_subnet1=10.1.0.10 ansible_subnet2=10.1.1.10
+
+[web_pcm]
+web0    ansible_host=185.177.94.182 ansible_subnet1=10.1.0.11 ansible_subnet2=10.1.1.11
+web1    ansible_host=185.177.94.229 ansible_subnet1=10.1.0.12 ansible_subnet2=10.1.1.12
+
+[quorum]
+qdevice ansible_host=185.177.95.129 ansible_subnet1=10.1.0.13
+
+[pr]
+proxy   ansible_host=185.177.92.106 ansible_subnet1=10.1.0.14 ansible_reverseproxy_ip=ip-185-177-92-106.ah-server.com
+
+[sql]
+mysql   ansible_host=185.177.93.177 ansible_subnet1=10.1.0.15

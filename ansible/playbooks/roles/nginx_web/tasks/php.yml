@@ -1,0 +1,111 @@
+---
+- name: Import REMI GPG-key
+  rpm_key:
+      key: "https://rpms.remirepo.net/RPM-GPG-KEY-remi2021"
+      state: present
+
+- name: Install REMI repo
+  yum:
+      name: "https://rpms.remirepo.net/enterprise/remi-release-7.rpm"
+      state: present
+
+- name: Enable Remi7 repository
+  lineinfile:
+      path: /etc/yum.repos.d/remi-php74.repo
+      regexp: '^enabled='
+      firstmatch: yes
+      line: enabled=1
+
+- name: Ensure PHP packages are installed.
+  yum:
+      name: "{{ item }}"
+      enablerepo: "{{ php_enablerepo }}"
+      state: latest
+  with_items: "{{ php_packages }}"
+  notify: restart php-fpm
+  tags:
+    - php-fpm-install
+
+- name: Ensure configuration directories exist.
+  file:
+      path: "{{ item }}"
+      follow: true
+      state: directory
+  with_flattened:
+    - /etc
+    - /etc/php.d
+  tags:
+    - php-fpm-config
+
+- name: Create a session-dir
+  file:
+    path: /mnt/gfs2/PHP/php/session
+    state: directory
+    owner: www-data
+    group: www-data
+    mode: 0775
+
+- name: Create a phpfpm-dir
+  file:
+    path: /mnt/gfs2/PHP/php-fpm
+    state: directory
+    owner: www-data
+    group: www-data
+    mode: 0775
+
+- name: Create a wsdlcache-dir
+  file:
+    path: /mnt/gfs2/PHP/php/wsdlcache
+    state: directory
+    owner: www-data
+    group: www-data
+    mode: 0775
+
+- name: Create php-fpm pool group.
+  group:
+      name: "{{ php_fpm_pool_group }}"
+  tags:
+    - php-fpm-config
+
+- name: Create php-fpm pool user
+  user:
+      name: "{{ php_fpm_pool_user }}"
+      group: "{{ php_fpm_pool_group }}"
+      createhome: no
+      shell: /sbin/nologin
+  tags:
+    - php-fpm-config
+
+- name: Place PHP configuration file in place.
+  template:
+      src: php.ini.j2
+      dest: /etc/php.ini
+  notify: restart php-fpm
+  tags:
+    - php-fpm-config
+
+- name: Ensure the default pool exists.
+  template:
+      src: www.conf.j2
+      dest: "{{ php_fpm_pool_conf_path }}"
+      force: yes
+  notify: restart php-fpm
+  tags:
+    - php-fpm-config
+
+- name: Ensure session directory permission.
+  file:
+      path: /mnt/gfs2/PHP/php/session
+      owner: "{{ php_fpm_pool_user }}"
+      group: "{{ php_fpm_pool_user }}"
+      state: directory
+  tags:
+    - php-fpm-config
+
+- name: Ensure php-fpm is stopped and disabled to start at boot.
+  service:
+      name: php-fpm
+      state: stopped
+  when: ansible_connection != 'docker'
+  tags:
+    - php-fpm-service

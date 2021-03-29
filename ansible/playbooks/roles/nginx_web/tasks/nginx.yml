@@ -1,0 +1,57 @@
+---
+- name: Install EPEL repository
+  yum:
+    name: epel-release
+    state: present
+
+- name: Installing nginx web server
+  yum:
+    name: nginx
+    state: present
+    update_cache: true
+
+- name: Linux | Create User
+  user:
+    name: www-data
+    password: ''
+    shell: /bin/bash
+
+- name: Create a cache-dir
+  file:
+    path: "{{ fcgi_path }}"
+    state: directory
+    owner: www-data
+    group: www-data
+    mode: 0775
+
+- name: Create a www-dir
+  file:
+    path: /mnt/gfs2/WP/wordpress
+    state: directory
+    owner: www-data
+    group: www-data
+    mode: 0775
+
+- name: Copying nginx.conf
+  template:
+    src: nginx.conf.j2
+    dest: /etc/nginx/nginx.conf
+
+- name: Adding permissive access
+  command: semanage permissive -a httpd_t
+
+- name: Enable nginx to be started at boot
+  service:
+    name: nginx
+  notify:
+    - stop nginx
+
+- name: Ensure session directory permission.
+  file:
+      path: /var/lib/nginx
+      owner: "{{ php_fpm_pool_user }}"
+      group: "{{ php_fpm_pool_user }}"
+      state: directory
+      recurse: true
+  tags:
+    - php-fpm-config

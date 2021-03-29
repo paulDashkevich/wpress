@@ -1,0 +1,31 @@
+---
+- meta: end_play
+  when: (ansible_distribution != "CentOS" and ansible_distribution_major_version != "7")
+
+- name: install iscsi target
+  yum:  name={{ item }}
+  with_items:
+    - targetcli
+
+- name: configure our target
+  ansible.builtin.shell: |
+     targetcli /backstores/block create disk01 /dev/sdb
+     targetcli /iscsi create iqn.2021-02.by.otus:storage.target00
+     targetcli /iscsi/iqn.2021-02.by.otus:storage.target00/tpg1/portals create 0.0.0.0
+     targetcli /iscsi/iqn.2021-02.by.otus:storage.target00/tpg1/luns create /backstores/block/disk01 lun=1
+     targetcli /iscsi/iqn.2021-02.by.otus:storage.target00/tpg1 set attribute authentication=0
+     targetcli /iscsi/iqn.2021-02.by.otus:storage.target00/tpg1/acls create iqn.2021-02.by.otus:web0
+     targetcli /iscsi/iqn.2021-02.by.otus:storage.target00/tpg1/acls create iqn.2021-02.by.otus:web1
+  ignore_errors: true
+
+- name: enable service
+  service:
+      name: targetclid
+      state: started
+      enabled: yes
+
+- name: enable service2
+  service:
+      name: target
+      state: started
+      enabled: yes

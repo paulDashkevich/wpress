@@ -1,0 +1,4 @@
+{% for item in ansible_play_batch %}
+{{ hostvars[item].ansible_subnet1 }} {{ item }}
+{% endfor %}
+

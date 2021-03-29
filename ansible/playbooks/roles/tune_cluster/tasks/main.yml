@@ -1,0 +1,20 @@
+---
+- name: Create resources
+  shell: |
+      pcs resource create webserver ocf:heartbeat:nginx op monitor timeout="5s" interval="5s"
+      pcs resource create php-fpm systemd:php-fpm.service op monitor timeout="5s" interval="5s"
+      pcs resource create keepalived systemd:keepalived op monitor timeout="5s" interval="5s"
+      pcs constraint order set clusterfs-clone dlm-clone clvmd-clone keepalived php-fpm webserver
+      pcs constraint location keepalived prefers web0=20 web1=10
+      pcs constraint location php-fpm  prefers web0=20 web1=10
+      pcs constraint location webserver prefers web0=20 web1=10
+
+
+
+- name: pcs auth
+  shell: |
+         pcs cluster auth {{ groups['quorum']|join(' ') }} -u {{ cluster_user }} -p {{ pcm_password }}
+  ignore_errors: true
+
+- name: add qdevice model net
+  command: pcs quorum device add model net host=qdevice algorithm=ffsplit

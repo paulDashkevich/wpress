@@ -1,0 +1,120 @@
+user www-data;
+worker_processes auto;
+error_log /var/log/nginx/error.log;
+pid /run/nginx.pid;
+
+events {
+    worker_connections 1024;
+}
+
+
+http {
+
+    fastcgi_cache_path {{ fcgi_path }} levels=1:2 keys_zone=FASTCGICACHE:100m inactive=60m;
+    fastcgi_cache_key "$scheme$request_method$host$request_uri";
+    fastcgi_cache_use_stale error timeout invalid_header http_500;
+    fastcgi_ignore_headers Cache-Control Expires Set-Cookie;
+
+upstream php-handler {
+    server unix:{{ php_fpm_listen }};
+    }
+
+    include       /etc/nginx/mime.types;
+    default_type  application/octet-stream;
+    sendfile        on;
+    keepalive_timeout  65;
+
+server {
+
+    listen {{ http_port }};
+    server_name  proxy;
+    root /mnt/gfs2/WP/wordpress;
+    index index.php;
+
+    gzip                on;
+    gzip_static         on;
+    gzip_disable        "msie6";
+    gzip_vary           on;
+    gzip_proxied        any;
+    gzip_comp_level     9;
+    gzip_buffers        32 8k;
+    gzip_http_version   1.1;
+    gzip_types          text/plain text/css application/json application/x-javascript text/xml application/xml application/xml+rss text/javascript image/png image/gif image/jpeg image/jpg;
+    add_header 'Access-Control-Allow-Origin' '*';
+    add_header 'Access-Control-Allow-Credentials' 'true';
+    add_header 'Access-Control-Allow-Headers' 'Authorization,Content-Type,Accept,Origin,User-Agent,DNT,Cache-Control,X-Mx-ReqToken';
+    add_header 'Access-Control-Allow-Methods' 'GET, POST, OPTIONS, PUT, DELETE';
+    add_header PS 1;
+    expires modified +7200h;
+    add_header  'Cache-Control' 'public';
+    set $skip_cache 0;
+        if ($request_method = POST) {
+        set $skip_cache 1;
+        }
+        if ($query_string != "")   {
+    set $skip_cache 1;
+        }
+        if ($request_uri ~* "/wp-admin/|/xmlrpc.php|wp-.*.php|/feed/|index.php|sitemap(_index)?.xml") {
+    set $skip_cache 1;
+        }
+        if ($http_cookie ~* "comment_author|wordpress_[a-f0-9]+|wp-postpass|wordpress_no_cache|wordpress_logged_in") {
+    set $skip_cache 1;
+        }
+       location ~* .(ogg|ogv|svg|svgz|eot|otf|woff|mp4|ttf|css|rss|atom|js|jpg|jpeg|gif|png|ico|zip|tgz|gz|rar|bz2|doc|xls|exe|ppt|tar|mid|midi|wav|bmp|rtf)$ {
+           expires max; log_not_found off; access_log off;
+      }
+        location ~ xmlrpc\.php     {
+           deny all;
+           allow 127.0.0.0/24;
+           allow 10.1.0.0/24;
+      }
+        location = /favicon.ico     {
+           log_not_found off;
+           access_log off;
+      }
+        location = /robots.txt     {
+            allow all;
+            log_not_found off;
+            access_log off;
+      }
+        location /                 {
+            allow 10.1.0.0/24;
+            try_files $uri $uri/ /index.php;
+            add_header  'Cache-Control' 'public';
+            add_header Pragma public;
+            deny all;
+      }
+        location ~ ^/\.user\.ini   {
+            deny all;
+      }
+        location ~*  \.(svg|svgz)$ {
+            types {}
+            default_type image/svg+xml;
+      }
+        location ~ \.php$          {
+            fastcgi_split_path_info ^(.+\.php)(/.+)$;
+            fastcgi_pass                 unix:{{ php_fpm_listen }};
+            fastcgi_index                index.php;
+            fastcgi_param                PHP_VALUE "upload_max_filesize = 100M \n post_max_size=101M";
+            fastcgi_cache_valid          200 301 302 30s;
+            fastcgi_cache                FASTCGICACHE;
+            fastcgi_pass_header          Set-Cookie;
+            fastcgi_pass_header          Cookie;
+            fastcgi_buffer_size          128k;
+            fastcgi_buffers 256          16k;
+            fastcgi_busy_buffers_size    256k;
+            fastcgi_temp_file_write_size 256k;
+            fastcgi_connect_timeout      3s;
+            fastcgi_send_timeout         120s;
+            fastcgi_read_timeout         120s;
+            fastcgi_cache_bypass         $skip_cache;
+            fastcgi_cache_valid          any 60m;
+            fastcgi_no_cache             $skip_cache;
+            fastcgi_cache_bypass         $http_pragma;
+            add_header X-Cache           $upstream_cache_status;
+            fastcgi_pass_header          X-Cache;
+            fastcgi_param                SCRIPT_FILENAME  $document_root$fastcgi_script_name;
+            include                      /etc/nginx/fastcgi_params;
+      }
+   }
+}

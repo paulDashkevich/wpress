@@ -1,0 +1,80 @@
+---
+- meta: end_play
+  when: (ansible_distribution != "CentOS" and ansible_distribution_major_version != "7")
+
+- name: Add official MariaDB repository
+  template:
+    src: etc_yum.repos.d_mariadb.repo.j2
+    dest: /etc/yum.repos.d/MariaDB.repo
+
+- name: Install packages
+  package:
+    name: "{{ mariadb_packages }}"
+    state: installed
+
+- name: Install server config file
+  template:
+    src: etc_my.cnf.d_server.cnf.j2
+    dest: "{{ mariadb_config_server }}"
+  notify: restart mariadb
+
+- name: Install network config file
+  template:
+    src: etc_my.cnf.d_network.cnf.j2
+    dest: "{{ mariadb_config_network }}"
+  notify: restart mariadb
+
+- name: Ensure service is started
+  service:
+    name: "{{ mariadb_service }}"
+    state: started
+    enabled: true
+
+- name: Set MariaDB root password
+  mysql_user:
+    name: root
+    host: mysql
+    password: "{{ mariadb_root_password }}"
+    state: present
+  no_log: true
+
+- name: Create WP DB
+  mysql_db:
+    name: "{{ mariadb_databases }}"
+    login_unix_socket: "{{ mariadb_socket }}"
+    login_user: root
+    login_password: "{{ mariadb_root_password }}"
+    state: present
+  no_log: true
+
+- name: Create db_user with all db_privileges
+  mysql_user:
+    name: "{{ mariadb_users }}"
+    check_implicit_admin: yes
+    login_user: root
+    login_password: "{{ mariadb_root_password }}"
+    password: "{{ mariadb_root_password }}"
+    priv: '{{ mariadb_users }}.*:ALL '
+    host: '%'
+    state: present
+  no_log: true
+
+- name: Remove the test database
+  mysql_db:
+    name: test
+    login_user: root
+    login_password: "{{ mariadb_root_password }}"
+    state: absent
+  no_log: true
+
+- name: Remove anonymous users
+  mysql_user:
+    name: ''
+    host_all: yes
+    login_user: root
+    login_password: "{{ mariadb_root_password }}"
+    state: absent
+  no_log: true
+
+- name: reboot host
+  reboot:
